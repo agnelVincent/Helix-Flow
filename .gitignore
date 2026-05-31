@@ -1,0 +1,141 @@
+# =============================================================
+#  Task Manager — Root .gitignore
+#  Covers: Python/Django backend + React/Vite frontend
+# =============================================================
+
+
+# -------------------------------------------------------------
+#  ENVIRONMENT & SECRETS  (never commit these)
+# -------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+*.pem
+*.key
+
+
+# -------------------------------------------------------------
+#  PYTHON / DJANGO
+# -------------------------------------------------------------
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Distribution / packaging
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# Django-specific
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# Static files collected by collectstatic (production only)
+staticfiles/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+
+# -------------------------------------------------------------
+#  NODE / REACT / VITE
+# -------------------------------------------------------------
+
+node_modules/
+
+# Vite build output
+dist/
+dist-ssr/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Cache
+.cache/
+.parcel-cache/
+.vite/
+
+# Testing
+coverage/
+
+
+# -------------------------------------------------------------
+#  EDITORS & IDEs
+# -------------------------------------------------------------
+
+# VSCode — allow shared extensions config, ignore the rest
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# JetBrains (PyCharm, WebStorm, etc.)
+.idea/
+*.iml
+
+# Vim / Emacs
+*.swp
+*.swo
+*.suo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+
+# -------------------------------------------------------------
+#  DOCKER (optional, for later)
+# -------------------------------------------------------------
+# Uncomment when you add docker-compose
+# docker-compose.override.yml
+
+
+# -------------------------------------------------------------
+#  MISC
+# -------------------------------------------------------------
+*.bak
+*.tmp
+*.orig
