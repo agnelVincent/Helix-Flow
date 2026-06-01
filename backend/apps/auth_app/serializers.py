@@ -2,7 +2,7 @@ import re
 from rest_framework import serializers
 
 
-class RegisterSerializer(serializers.serializer):
+class RegisterSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length = 50, required = False, allow_blank = True)
     last_name = serializers.CharField(max_length=50, required=False, allow_blank=True)
     email = serializers.EmailField()

@@ -3,7 +3,6 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from django.core.mail import send_mail
 from django.conf import settings
-from rest_framework_simplejwt.tokens import RefreshToken
 from core.constants import OTP_LENGTH, OTP_EXPIRY_MINUTES, EMAIL_SUBJECT_OTP
 
 
@@ -66,7 +65,7 @@ def get_tokens_for_user(user) -> dict:
 
     access_token = jwt.encode(access_payload, settings.SECRET_KEY, algorithm='HS256')
     refresh_token = jwt.encode(refresh_payload, settings.SECRET_KEY, algorithm='HS256')
-    
+
     return {
         'access': access_token,
         'refresh': refresh_token,
