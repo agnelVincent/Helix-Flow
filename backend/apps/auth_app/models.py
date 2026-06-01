@@ -1,6 +1,6 @@
 from mongoengine import Document, StringField, BooleanField, DateTimeField
 from django.contrib.auth.hashers import make_password, check_password
-from datetime import datetime
+from datetime import datetime,timezone
 
 
 class User(Document):
@@ -11,8 +11,8 @@ class User(Document):
     otp = StringField(required=False, default=None)             
     otp_expires_at = DateTimeField(required=False, default=None)
     is_active = BooleanField(default=True)
-    created_at = DateTimeField(default=datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.utcnow)
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    updated_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
 
     meta = {
         'collection': 'users',          
@@ -26,10 +26,11 @@ class User(Document):
     def verify_password(self, raw_password: str) -> bool:
         return check_password(raw_password, self.password)
     
-    def clear_otp(self):
-        self.otp = None
-        self.otp_expires_at = None
-        self.save()
+def clear_otp(self):
+    self.otp = None
+    self.otp_expires_at = None
+    self.updated_at = datetime.now(timezone.utc)
+    self.save()
 
     def __str__(self):
         return self.email
