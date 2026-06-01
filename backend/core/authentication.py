@@ -1,22 +1,32 @@
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+import jwt
+from django.conf import settings
+from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from apps.auth_app.models import User
 
-class CookieJWTAuthentication(JWTAuthentication):
+class CookieJWTAuthentication(BaseAuthentication):
 
     def authenticate(self, request):
-
         raw_token = request.COOKIES.get('access_token')
         if raw_token is None:
             return None
         
         try:
-            validated_token = self.get_validated_token(raw_token)
-        except (InvalidToken, TokenError) as e:
-            raise AuthenticationFailed(str(e))
+            payload = jwt.decode(
+                raw_token,
+                settings.SECRET_KEY,
+                algorithms=['HS256'],
+            )
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationFailed("Access token has expired. Please refresh.")
+        except jwt.InvalidTokenError:
+            raise AuthenticationFailed("Invalid access token.")
         
-        user_id = validated_token.get('user_id')
+        if payload.get('token_type') != 'access':
+            raise AuthenticationFailed("Invalid token type.")
+        
+        user_id = payload.get('user_id')
+
         if not user_id:
             raise AuthenticationFailed("Token missing user_id claim.")
         
@@ -28,4 +38,4 @@ class CookieJWTAuthentication(JWTAuthentication):
         if not user.is_active:
             raise AuthenticationFailed("This account has been deactivated.")
         
-        return (user, validated_token)
+        return (user, payload)

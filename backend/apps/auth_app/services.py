@@ -43,14 +43,33 @@ def send_otp_email(email: str, otp: str) -> None:
 
 
 def get_tokens_for_user(user) -> dict:
-    refresh = RefreshToken()
+    import jwt
+    from datetime import datetime, timezone, timedelta
+    from django.conf import settings
+    now = datetime.now(timezone.utc)
+    
+    access_payload = {
+        'user_id': str(user.id),
+        'email': user.email,
+        'token_type': 'access',
+        'iat': now,
+        'exp': now + timedelta(minutes=15),
+    }
+    
+    refresh_payload = {
+        'user_id': str(user.id),
+        'email': user.email,
+        'token_type': 'refresh',
+        'iat': now,
+        'exp': now + timedelta(days=7),
+    }
 
-    refresh['user_id'] = str(user.id)
-    refresh['email'] = user.email
-
-    return{
-        'refresh' : str(refresh),
-        'access' : str(refresh.access_token)
+    access_token = jwt.encode(access_payload, settings.SECRET_KEY, algorithm='HS256')
+    refresh_token = jwt.encode(refresh_payload, settings.SECRET_KEY, algorithm='HS256')
+    
+    return {
+        'access': access_token,
+        'refresh': refresh_token,
     }
 
 
