@@ -88,6 +88,62 @@ class RegisterView(APIView):
             message="Account created successfully. Please log in.",
             status_code=status.HTTP_201_CREATED,
         )
+
+
+class RegisterVerifyView(APIView):
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = OTPVerifySerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return error_response(
+                message="Invalid input.",
+                data=serializer.errors,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        data = serializer.validated_data
+        user = get_user_by_email(data['email'])
+        
+        if not user or user.is_active:
+            return error_response(
+                message="No pending registration found for this email.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        if not user.otp:
+            return error_response(
+                message="No OTP was requested. Please register again.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        if datetime.now(timezone.utc) > user.otp_expires_at.replace(tzinfo=timezone.utc):
+            return error_response(
+                message="OTP has expired. Please register again.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        if user.otp != data['otp']:
+            return error_response(
+                message="Incorrect OTP.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        user.is_active = True
+        user.clear_otp()
+        
+        tokens = get_tokens_for_user(user)
+        response = success_response(
+            message="Email verified. Registration complete.",
+            data={"email": user.email, "first_name": user.first_name},
+            status_code=status.HTTP_200_OK,
+        )
+        
+        set_auth_cookies(response, tokens)
+        return response
+
     
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -235,7 +291,7 @@ class TokenRefreshView(APIView):
         
         is_production = not settings.DEBUG
         response = success_response(message="Access token refreshed.")
-        
+
         response.set_cookie(
             key=ACCESS_TOKEN_COOKIE,
             value=new_access,
