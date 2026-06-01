@@ -20,4 +20,16 @@ class User(Document):
         'ordering': ['-created_at'],    
     }
 
+    def set_password(self, raw_password: str):
+        self.password = make_password(raw_password)
+
+    def verify_password(self, raw_password: str) -> bool:
+        return check_password(raw_password, self.password)
     
+    def clear_otp(self):
+        self.otp = None
+        self.otp_expires_at = None
+        self.save()
+
+    def __str__(self):
+        return self.email
