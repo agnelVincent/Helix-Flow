@@ -140,7 +140,7 @@ class RegisterVerifyView(APIView):
             data={"email": user.email, "first_name": user.first_name},
             status_code=status.HTTP_200_OK,
         )
-        
+
         set_auth_cookies(response, tokens)
         return response
 
@@ -270,8 +270,9 @@ class TokenRefreshView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        from rest_framework_simplejwt.tokens import RefreshToken
-        from rest_framework_simplejwt.exceptions import TokenError
+        import jwt
+        from datetime import datetime, timezone, timedelta
+
         raw_refresh = request.COOKIES.get(REFRESH_TOKEN_COOKIE)
 
         if not raw_refresh:
@@ -281,14 +282,40 @@ class TokenRefreshView(APIView):
             )
         
         try:
-            refresh = RefreshToken(raw_refresh)
-            new_access = str(refresh.access_token)
-        except TokenError:
+            payload = jwt.decode(
+                raw_refresh,
+                settings.SECRET_KEY,
+                algorithms=['HS256'],
+            )
+
+        except jwt.ExpiredSignatureError:
             return error_response(
-                message="Refresh token is invalid or expired. Please log in again.",
+                message="Session expired. Please log in again.",
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
         
+        except jwt.InvalidTokenError:
+            return error_response(
+                message="Invalid refresh token. Please log in again.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+        
+        if payload.get('token_type') != 'refresh':
+            return error_response(
+                message="Invalid token type.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+        
+        now = datetime.now(timezone.utc)
+        new_access_payload = {
+            'user_id': payload['user_id'],
+            'email': payload['email'],
+            'token_type': 'access',
+            'iat': now,
+            'exp': now + timedelta(minutes=15),
+        }
+        new_access = jwt.encode(new_access_payload, settings.SECRET_KEY, algorithm='HS256')
+
         is_production = not settings.DEBUG
         response = success_response(message="Access token refreshed.")
 
