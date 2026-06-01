@@ -26,3 +26,29 @@ class RegisterSerializer(serializers.serializer):
         if data.get('password') != data.get('confirm_password'):
             raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
         return data
+    
+class LoginSerializer(serializers.Serializer):
+
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+    def validate_email(self, value: str) -> str:
+        return value.strip().lower()
+    
+class OTPRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value: str) -> str:
+        return value.strip().lower()
+    
+
+class OTPVerifySerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField(min_length=6, max_length=6)
+
+    def validate_email(self, value: str) -> str:
+        return value.strip().lower()
+    
+    def validate_otp(self, value: str) -> str:
+        if not value.isdigit():
+            raise serializers.ValidationError("OTP must contain digits only.")
+        return value
