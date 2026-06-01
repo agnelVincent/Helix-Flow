@@ -128,3 +128,38 @@ class LoginView(APIView):
         return response
 
 
+class OTPSendView(APIView):
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = OTPRequestSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return error_response(
+                message="Invalid input.",
+                data=serializer.errors,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        email = serializer.validated_data['email']
+        
+        user = get_user_by_email(email)
+        if not user:
+            user = User(email=email)
+        
+        otp = generate_otp()
+        user.otp = otp
+        user.otp_expires_at = get_otp_expiry()
+        user.save()
+        
+        try:
+            send_otp_email(email, otp)
+
+        except Exception:
+            return error_response(
+                message="Failed to send OTP. Please try again.",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+        return success_response(message="OTP sent to your email.")
