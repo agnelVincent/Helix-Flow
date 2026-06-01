@@ -66,15 +66,15 @@ mongoengine.connect(
 
 
 REST_FRAMEWORK = {
-    # JWT Bearer token authentication
+    
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'core.authentication.CookieJWTAuthentication',
     ),
-    # All endpoints require authentication by default
+    
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
-    # Custom exception handler defined in core/exceptions.py
+    
     'EXCEPTION_HANDLER': 'core.exceptions.custom_exception_handler',
 }
 
