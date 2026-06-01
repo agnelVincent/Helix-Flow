@@ -163,3 +163,49 @@ class OTPSendView(APIView):
             )
         
         return success_response(message="OTP sent to your email.")
+    
+
+class OTPVerifyView(APIView):
+
+    permission_classes = [AllowAny]
+    def post(self, request):
+        serializer = OTPVerifySerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return error_response(
+                message="Invalid input.",
+                data=serializer.errors,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        data = serializer.validated_data
+        user = get_user_by_email(data['email'])
+        
+        if not user or not user.otp:
+            return error_response(
+                message="No OTP was requested for this email.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        if datetime.now(timezone.utc) > user.otp_expires_at.replace(tzinfo=timezone.utc):
+            return error_response(
+                message="OTP has expired. Please request a new one.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        if user.otp != data['otp']:
+            return error_response(
+                message="Incorrect OTP.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        user.clear_otp()
+        
+        tokens = get_tokens_for_user(user)
+        response = success_response(
+            message="OTP verified. Login successful.",
+            data={"email": user.email, "first_name": user.first_name},
+        )
+
+        set_auth_cookies(response, tokens)
+        return response
