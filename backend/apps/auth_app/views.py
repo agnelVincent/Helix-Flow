@@ -50,3 +50,41 @@ def clear_auth_cookies(response):
     response.delete_cookie(ACCESS_TOKEN_COOKIE)
     response.delete_cookie(REFRESH_TOKEN_COOKIE)
 
+
+
+class RegisterView(APIView):
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return error_response(
+                message="Registration failed.",
+                data=serializer.errors,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        data = serializer.validated_data
+        email = data['email']
+        
+        if get_user_by_email(email):
+            return error_response(
+                message="An account with this email already exists.",
+                status_code=status.HTTP_409_CONFLICT,
+            )
+        
+        user = User(
+            email=email,
+            first_name=data.get('first_name', ''),
+            last_name=data.get('last_name', ''),
+        )
+
+        user.set_password(data['password'])
+        user.save()
+        
+        return success_response(
+            message="Account created successfully. Please log in.",
+            status_code=status.HTTP_201_CREATED,
+        )
