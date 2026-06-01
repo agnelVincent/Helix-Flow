@@ -339,3 +339,19 @@ class LogoutView(APIView):
         clear_auth_cookies(response)
 
         return response
+
+
+class MeView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user   
+        return success_response(
+            message="Authenticated user fetched.",
+            data={
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+            },
+        )
