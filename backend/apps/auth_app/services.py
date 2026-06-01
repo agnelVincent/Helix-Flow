@@ -40,3 +40,15 @@ def send_otp_email(email: str, otp: str) -> None:
         recipient_list=[email],
         fail_silently=False,   
     )
+
+
+def get_tokens_for_user(user) -> dict:
+    refresh = RefreshToken()
+
+    refresh['user_id'] = str(user.id)
+    refresh['email'] = user.email
+
+    return{
+        'refresh' : str(refresh),
+        'access' : str(refresh.access_token)
+    }
