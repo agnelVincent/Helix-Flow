@@ -52,3 +52,11 @@ def get_tokens_for_user(user) -> dict:
         'refresh' : str(refresh),
         'access' : str(refresh.access_token)
     }
+
+
+def get_user_by_email(email: str):
+    from apps.auth_app.models import User
+    try:
+        return User.objects.get(email=email)
+    except User.DoesNotExist:
+        return None
