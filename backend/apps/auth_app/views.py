@@ -180,7 +180,7 @@ class OTPVerifyView(APIView):
         
         data = serializer.validated_data
         user = get_user_by_email(data['email'])
-        
+
         if not user or not user.otp:
             return error_response(
                 message="No OTP was requested for this email.",
@@ -208,4 +208,51 @@ class OTPVerifyView(APIView):
         )
 
         set_auth_cookies(response, tokens)
+        return response
+    
+class TokenRefreshView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from rest_framework_simplejwt.tokens import RefreshToken
+        from rest_framework_simplejwt.exceptions import TokenError
+        raw_refresh = request.COOKIES.get(REFRESH_TOKEN_COOKIE)
+
+        if not raw_refresh:
+            return error_response(
+                message="No refresh token found. Please log in again.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+        
+        try:
+            refresh = RefreshToken(raw_refresh)
+            new_access = str(refresh.access_token)
+        except TokenError:
+            return error_response(
+                message="Refresh token is invalid or expired. Please log in again.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+        
+        is_production = not settings.DEBUG
+        response = success_response(message="Access token refreshed.")
+        
+        response.set_cookie(
+            key=ACCESS_TOKEN_COOKIE,
+            value=new_access,
+            max_age=ACCESS_TOKEN_MAX_AGE,
+            httponly=True,
+            secure=is_production,
+            samesite='Lax',
+        )
+        return response
+    
+
+class LogoutView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+
+        response = success_response(message="Logged out successfully.")
+        clear_auth_cookies(response)
+
         return response
