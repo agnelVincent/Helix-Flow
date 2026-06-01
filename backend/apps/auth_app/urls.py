@@ -7,6 +7,7 @@ from apps.auth_app.views import (
     OTPVerifyView,
     TokenRefreshView,
     LogoutView,
+    MeView
 )
 
 
@@ -22,4 +23,6 @@ urlpatterns = [
     # Token management
     path('refresh/', TokenRefreshView.as_view(), name='auth-token-refresh'),
     path('logout/', LogoutView.as_view(), name='auth-logout'),
+
+    path('me/', MeView.as_view(), name='auth-me'),
 ]
