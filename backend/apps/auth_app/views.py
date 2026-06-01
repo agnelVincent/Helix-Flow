@@ -83,8 +83,48 @@ class RegisterView(APIView):
 
         user.set_password(data['password'])
         user.save()
-        
+
         return success_response(
             message="Account created successfully. Please log in.",
             status_code=status.HTTP_201_CREATED,
         )
+    
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return error_response(
+                message="Invalid input.",
+                data=serializer.errors,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        data = serializer.validated_data
+        user = get_user_by_email(data['email'])
+        
+        if not user or not user.verify_password(data['password']):
+            return error_response(
+                message="Invalid email or password.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+        
+        if not user.is_active:
+            return error_response(
+                message="This account has been deactivated.",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+        
+        tokens = get_tokens_for_user(user)
+
+        response = success_response(
+            message="Login successful.",
+            data={"email": user.email, "first_name": user.first_name},
+        )
+
+        set_auth_cookies(response, tokens)
+        return response
+
+
