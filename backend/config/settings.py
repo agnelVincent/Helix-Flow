@@ -5,6 +5,7 @@ Environment variables are loaded from the .env file using python-decouple.
 NEVER hardcode secrets here — always use config() to read from .env.
 """
 
+
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
@@ -18,6 +19,7 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(','
 
 
 INSTALLED_APPS = [
+    'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.staticfiles',
 
@@ -61,9 +63,8 @@ import mongoengine
 
 mongoengine.connect(
     db=config('MONGO_DB_NAME', default='taskmanager'),
-    host=config('MONGO_URI'),
+    host=config('MONGO_URI'), 
 )
-
 
 REST_FRAMEWORK = {
     
@@ -76,6 +77,7 @@ REST_FRAMEWORK = {
     ),
     
     'EXCEPTION_HANDLER': 'core.exceptions.custom_exception_handler',
+    'UNAUTHENTICATED_USER': 'django.contrib.auth.models.AnonymousUser',
 }
 
 

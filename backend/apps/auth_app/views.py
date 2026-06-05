@@ -73,6 +73,7 @@ class RegisterView(APIView):
             return error_response(
                 message="An account with this email already exists.",
                 status_code=status.HTTP_409_CONFLICT,
+                data = None
             )
         
         user = User(
@@ -87,6 +88,7 @@ class RegisterView(APIView):
         return success_response(
             message="Account created successfully. Please log in.",
             status_code=status.HTTP_201_CREATED,
+            data = None
         )
 
 
