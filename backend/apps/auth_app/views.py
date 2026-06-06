@@ -83,7 +83,19 @@ class RegisterView(APIView):
         )
 
         user.set_password(data['password'])
+        user.otp = generate_otp()
+        user.otp_expires_at = get_otp_expiry()
         user.save()
+
+        try:
+            send_otp_email(user.email, user.otp)
+        except Exception as e:
+            user.delete() 
+            return error_response(
+                message="Failed to send verification email. Please try again later.",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                data=str(e)
+            )
 
         return success_response(
             message="Account created successfully. Please log in.",
@@ -113,24 +125,28 @@ class RegisterVerifyView(APIView):
             return error_response(
                 message="No pending registration found for this email.",
                 status_code=status.HTTP_400_BAD_REQUEST,
+                data = None
             )
         
         if not user.otp:
             return error_response(
                 message="No OTP was requested. Please register again.",
                 status_code=status.HTTP_400_BAD_REQUEST,
+                data = None
             )
         
         if datetime.now(timezone.utc) > user.otp_expires_at.replace(tzinfo=timezone.utc):
             return error_response(
                 message="OTP has expired. Please register again.",
                 status_code=status.HTTP_400_BAD_REQUEST,
+                data = None
             )
         
         if user.otp != data['otp']:
             return error_response(
                 message="Incorrect OTP.",
                 status_code=status.HTTP_400_BAD_REQUEST,
+                data = None
             )
         
         user.is_active = True
