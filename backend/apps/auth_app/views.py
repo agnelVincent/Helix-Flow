@@ -60,6 +60,7 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
 
         if not serializer.is_valid():
+            print(serializer.errors)
             return error_response(
                 message="Registration failed.",
                 data=serializer.errors,
@@ -69,21 +70,42 @@ class RegisterView(APIView):
         data = serializer.validated_data
         email = data['email']
         
-        if get_user_by_email(email):
+        existing = get_user_by_email(email)
+
+        if existing and existing.is_active:
             return error_response(
                 message="An account with this email already exists.",
                 status_code=status.HTTP_409_CONFLICT,
-                data = None
+            )
+        
+        if existing and not existing.is_active:
+            existing.set_password(data['password'])
+            existing.first_name    = data.get('first_name', existing.first_name)
+            existing.last_name     = data.get('last_name',  existing.last_name)
+            existing.otp           = generate_otp()
+            existing.otp_expires_at = get_otp_expiry()
+            existing.save()
+            try:
+                send_otp_email(email, existing.otp)
+            except Exception:
+                return error_response(
+                    message="Failed to send OTP. Please try again.",
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            return success_response(
+                message="OTP resent to your email. Please verify to complete registration.",
+                status_code=status.HTTP_200_OK,
             )
         
         user = User(
             email=email,
             first_name=data.get('first_name', ''),
             last_name=data.get('last_name', ''),
+            is_active=False
         )
 
         user.set_password(data['password'])
-        user.otp = generate_otp()
+        user.otp            = generate_otp()
         user.otp_expires_at = get_otp_expiry()
         user.save()
 
@@ -100,7 +122,6 @@ class RegisterView(APIView):
         return success_response(
             message="Account created successfully. Please log in.",
             status_code=status.HTTP_201_CREATED,
-            data = None
         )
 
 
@@ -125,28 +146,24 @@ class RegisterVerifyView(APIView):
             return error_response(
                 message="No pending registration found for this email.",
                 status_code=status.HTTP_400_BAD_REQUEST,
-                data = None
             )
         
         if not user.otp:
             return error_response(
                 message="No OTP was requested. Please register again.",
                 status_code=status.HTTP_400_BAD_REQUEST,
-                data = None
             )
         
         if datetime.now(timezone.utc) > user.otp_expires_at.replace(tzinfo=timezone.utc):
             return error_response(
                 message="OTP has expired. Please register again.",
                 status_code=status.HTTP_400_BAD_REQUEST,
-                data = None
             )
         
         if user.otp != data['otp']:
             return error_response(
                 message="Incorrect OTP.",
                 status_code=status.HTTP_400_BAD_REQUEST,
-                data = None
             )
         
         user.is_active = True

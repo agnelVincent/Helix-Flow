@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework import status
 
-def success_response(message : str, data : None, status_code = status.HTTP_200_OK) -> Response:
+def success_response(message : str, data = None, status_code = status.HTTP_200_OK) -> Response:
     return Response(
         {
             'success' : True,
@@ -12,7 +12,7 @@ def success_response(message : str, data : None, status_code = status.HTTP_200_O
     )
 
 
-def error_response(message : str, data : None, status_code = status.HTTP_400_BAD_REQUEST) -> Response:
+def error_response(message : str, data = None, status_code = status.HTTP_400_BAD_REQUEST) -> Response:
     return Response(
         {
             'success' : False,
