@@ -60,7 +60,6 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
 
         if not serializer.is_valid():
-            print(serializer.errors)
             return error_response(
                 message="Registration failed.",
                 data=serializer.errors,
@@ -204,7 +203,7 @@ class LoginView(APIView):
         
         if not user.is_active:
             return error_response(
-                message="This account has been deactivated.",
+                message="Please verify your email before logging in.",
                 status_code=status.HTTP_403_FORBIDDEN,
             )
         
@@ -291,6 +290,12 @@ class OTPVerifyView(APIView):
             )
         
         user.clear_otp()
+
+        if not user.is_active:
+            return error_response(
+                message="This account has been deactivated.",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
         
         tokens = get_tokens_for_user(user)
         response = success_response(
