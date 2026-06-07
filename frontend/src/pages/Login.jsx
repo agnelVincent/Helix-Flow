@@ -349,12 +349,19 @@ export default function Login() {
         toast.success(res.data.message);
       }
       setOtpStep('sent');
-    } catch (err) {
-      // Generic message to avoid email enumeration on OTP endpoint
-      const msg = 'If that email exists, an OTP has been sent.';
-      setErrors({ form: msg });
-      toast.success(msg); // intentionally success tone (anti-enumeration)
-    } finally {
+    }  catch (err) {
+  if (mode === 'register') {
+    // Show real server error (e.g. "An account with this email already exists.")
+    const msg = err.response?.data?.message || 'Registration failed. Please try again.';
+    setErrors({ form: msg });
+    toast.error(msg);
+  } else {
+    // Anti-enumeration for OTP login only
+    const msg = 'If that email exists, an OTP has been sent.';
+    setErrors({ form: msg });
+    toast.success(msg);
+  }
+} finally {
       setLoading(false);
     }
   };
