@@ -5,7 +5,7 @@
  * Wrap all authenticated pages with this.
  */
 
-import Sidebar from './SideBar';
+import Sidebar from './Sidebar';
 
 export default function Layout({ children }) {
   return (
