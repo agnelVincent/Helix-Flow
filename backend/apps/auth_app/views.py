@@ -291,11 +291,11 @@ class OTPVerifyView(APIView):
         
         user.clear_otp()
 
+        # OTP login counts as email verification —
+        # activate the account if it wasn't already
         if not user.is_active:
-            return error_response(
-                message="This account has been deactivated.",
-                status_code=status.HTTP_403_FORBIDDEN,
-            )
+            user.is_active = True
+        user.save()
         
         tokens = get_tokens_for_user(user)
         response = success_response(
