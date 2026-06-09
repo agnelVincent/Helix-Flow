@@ -2,8 +2,8 @@ import axios from 'axios';
 
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL, 
-  withCredentials: true,                       
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -11,7 +11,6 @@ const api = axios.create({
 
 
 let isRefreshing = false;
-
 let failedQueue = [];
 
 const processQueue = (error) => {
@@ -27,10 +26,20 @@ const processQueue = (error) => {
 
 
 api.interceptors.response.use(
-    (response) => response,
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
+
+    // Never trigger token refresh for auth endpoints —
+    // let 401/403 errors pass directly to the component's catch block
+    // so toast.error() and setErrors() can display them properly.
+    const isAuthEndpoint =
+      originalRequest.url.includes('/auth/login/') ||
+      originalRequest.url.includes('/auth/register/') ||
+      originalRequest.url.includes('/auth/refresh/') ||
+      originalRequest.url.includes('/auth/otp/');
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -46,11 +55,11 @@ api.interceptors.response.use(
         await api.post('/auth/refresh/');
         processQueue(null);
         return api(originalRequest);
-        } catch (refreshError) {
+      } catch (refreshError) {
         processQueue(refreshError);
         window.location.href = '/login';
         return Promise.reject(refreshError);
-        } finally {
+      } finally {
         isRefreshing = false;
       }
     }
@@ -60,5 +69,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-
-        
