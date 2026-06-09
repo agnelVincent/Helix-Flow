@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import FormField from '../components/common/FormField';
@@ -12,15 +12,7 @@ import {
   verifyOtp,
 } from '../api/authApi';
 
-// ── Security Constants ──────────────────────────────────────────────────────
-
-const RATE_LIMIT = {
-  MAX_ATTEMPTS: 5,
-  WINDOW_MS: 15 * 60 * 1000,    // 15 minutes
-  OTP_MAX: 3,
-  OTP_WINDOW_MS: 10 * 60 * 1000, // 10 minutes
-  LOCKOUT_MS: 15 * 60 * 1000,
-};
+// ── Field limits ─────────────────────────────────────────────────────────────
 
 const FIELD_LIMITS = {
   EMAIL_MAX: 254,       // RFC 5321
@@ -108,58 +100,13 @@ const validateOtp = (raw) => {
   return null;
 };
 
-// ── Rate Limiter (client-side defence-in-depth) ──────────────────────────────
-// Real enforcement MUST be on the server; this adds friction against scripts.
 
-class RateLimiter {
-  constructor(maxAttempts, windowMs, lockoutMs) {
-    this.maxAttempts = maxAttempts;
-    this.windowMs = windowMs;
-    this.lockoutMs = lockoutMs;
-    this.attempts = [];
-    this.lockedUntil = null;
-  }
-
-  isLocked() {
-    if (this.lockedUntil && Date.now() < this.lockedUntil) {
-      const remaining = Math.ceil((this.lockedUntil - Date.now()) / 1000);
-      return `Too many attempts. Try again in ${remaining}s.`;
-    }
-    this.lockedUntil = null;
-    return null;
-  }
-
-  record() {
-    const now = Date.now();
-    this.attempts = this.attempts.filter((t) => now - t < this.windowMs);
-    this.attempts.push(now);
-    if (this.attempts.length >= this.maxAttempts) {
-      this.lockedUntil = now + this.lockoutMs;
-      this.attempts = [];
-      return `Too many attempts. Locked for ${Math.ceil(this.lockoutMs / 60000)} minutes.`;
-    }
-    return null;
-  }
-
-  reset() {
-    this.attempts = [];
-    this.lockedUntil = null;
-  }
-}
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
-
-  // Rate limiters (per instance / tab session)
-  const loginLimiter = useRef(
-    new RateLimiter(RATE_LIMIT.MAX_ATTEMPTS, RATE_LIMIT.WINDOW_MS, RATE_LIMIT.LOCKOUT_MS)
-  );
-  const otpLimiter = useRef(
-    new RateLimiter(RATE_LIMIT.OTP_MAX, RATE_LIMIT.OTP_WINDOW_MS, RATE_LIMIT.LOCKOUT_MS)
-  );
 
   // ── UI state
   const [mode, setMode] = useState('login');
@@ -213,8 +160,6 @@ export default function Login() {
   };
 
   const handleSuccess = (responseData) => {
-    loginLimiter.current.reset();
-    otpLimiter.current.reset();
     login(responseData);
     navigate('/dashboard', { replace: true });
   };
@@ -242,15 +187,6 @@ export default function Login() {
   const handlePasswordLogin = async (e) => {
     e.preventDefault();
 
-    // Client-side rate-limit check
-    const lockMsg = loginLimiter.current.isLocked();
-    if (lockMsg) {
-      setErrors({ form: lockMsg });
-      toast.error(lockMsg);
-      return;
-    }
-
-    // Validate
     const newErrors = {};
     const emailErr = validateEmail(email);
     if (emailErr) newErrors.email = emailErr;
@@ -265,9 +201,6 @@ export default function Login() {
     setLoading(true);
     setErrors({});
 
-    // Record attempt BEFORE the request (prevents bypass by cancelling)
-    const overLimitMsg = loginLimiter.current.record();
-
     try {
       const res = await loginApi({
         email: sanitize(email),
@@ -276,18 +209,10 @@ export default function Login() {
       toast.success(res.data.message);
       handleSuccess(res.data.data);
     } catch (err) {
-      // Use generic message to avoid user enumeration
       const serverMsg = err.response?.data?.message;
-      const msg =
-        err.response?.status === 401 || err.response?.status === 404
-          ? 'Invalid email or password.'
-          : serverMsg || 'Login failed. Please try again.';
+      const msg = serverMsg || 'Login failed. Please try again.';
       setErrors({ form: msg });
       toast.error(msg);
-      if (overLimitMsg) {
-        setErrors({ form: overLimitMsg });
-        toast.error(overLimitMsg);
-      }
     } finally {
       setLoading(false);
     }
@@ -298,13 +223,6 @@ export default function Login() {
    */
   const handleSendOtp = async (e) => {
     e.preventDefault();
-
-    const lockMsg = otpLimiter.current.isLocked();
-    if (lockMsg) {
-      setErrors({ form: lockMsg });
-      toast.error(lockMsg);
-      return;
-    }
 
     const newErrors = {};
     const emailErr = validateEmail(email);
@@ -332,7 +250,6 @@ export default function Login() {
 
     setLoading(true);
     setErrors({});
-    otpLimiter.current.record();
 
     try {
       if (mode === 'register') {
@@ -349,19 +266,11 @@ export default function Login() {
         toast.success(res.data.message);
       }
       setOtpStep('sent');
-    }  catch (err) {
-  if (mode === 'register') {
-    // Show real server error (e.g. "An account with this email already exists.")
-    const msg = err.response?.data?.message || 'Registration failed. Please try again.';
-    setErrors({ form: msg });
-    toast.error(msg);
-  } else {
-    // Anti-enumeration for OTP login only
-    const msg = 'If that email exists, an OTP has been sent.';
-    setErrors({ form: msg });
-    toast.success(msg);
-  }
-} finally {
+    } catch (err) {
+      const msg = err.response?.data?.message || (mode === 'register' ? 'Registration failed. Please try again.' : 'Failed to send OTP. Please try again.');
+      setErrors({ form: msg });
+      toast.error(msg);
+    } finally {
       setLoading(false);
     }
   };
@@ -372,13 +281,6 @@ export default function Login() {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
 
-    const lockMsg = otpLimiter.current.isLocked();
-    if (lockMsg) {
-      setErrors({ form: lockMsg });
-      toast.error(lockMsg);
-      return;
-    }
-
     const otpErr = validateOtp(otp);
     if (otpErr) {
       setErrors({ otp: otpErr });
@@ -387,7 +289,6 @@ export default function Login() {
 
     setLoading(true);
     setErrors({});
-    otpLimiter.current.record();
 
     try {
       const fn = mode === 'register' ? registerVerify : verifyOtp;
