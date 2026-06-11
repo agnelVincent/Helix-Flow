@@ -97,6 +97,8 @@ CSRF_COOKIE_SAMESITE = 'None'
 CSRF_COOKIE_SECURE = True
 
 CSRF_TRUSTED_ORIGINS = [
+    'https://helix-flow-3i1a.vercel.app',
+    'https://helix-flow.duckdns.org',
     'https://vercel.app',
     'https://duckdns.org',
 ]
