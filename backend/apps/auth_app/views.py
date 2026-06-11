@@ -26,15 +26,13 @@ REFRESH_TOKEN_MAX_AGE = 60 * 60 * 24 * 7
 
 
 def set_auth_cookies(response, tokens: dict):
-    is_production = not settings.DEBUG
-
     response.set_cookie(
         key=ACCESS_TOKEN_COOKIE,
         value=tokens['access'],
         max_age=ACCESS_TOKEN_MAX_AGE,
-        httponly=True,           
-        secure=is_production,       
-        samesite='Lax',             
+        httponly=True,
+        secure=True,        # required when samesite='None'
+        samesite='None',    # required for cross-site (Vercel → EC2)
     )
 
     response.set_cookie(
@@ -42,13 +40,13 @@ def set_auth_cookies(response, tokens: dict):
         value=tokens['refresh'],
         max_age=REFRESH_TOKEN_MAX_AGE,
         httponly=True,
-        secure=is_production,
-        samesite='Lax',
+        secure=True,
+        samesite='None',
     )
 
 def clear_auth_cookies(response):
-    response.delete_cookie(ACCESS_TOKEN_COOKIE)
-    response.delete_cookie(REFRESH_TOKEN_COOKIE)
+    response.delete_cookie(ACCESS_TOKEN_COOKIE, samesite='None')
+    response.delete_cookie(REFRESH_TOKEN_COOKIE, samesite='None')
 
 
 
