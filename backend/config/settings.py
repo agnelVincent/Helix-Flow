@@ -82,7 +82,6 @@ REST_FRAMEWORK = {
     'UNAUTHENTICATED_USER': 'django.contrib.auth.models.AnonymousUser',
 }
 
-
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
     default='http://localhost:5173,http://127.0.0.1:5173'
@@ -91,6 +90,16 @@ CORS_ALLOWED_ORIGINS = config(
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 CORS_ALLOW_CREDENTIALS = True
+
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://vercel.app',
+    'https://duckdns.org',
+]
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
