@@ -32,7 +32,7 @@ def set_auth_cookies(response, tokens: dict):
         max_age=ACCESS_TOKEN_MAX_AGE,
         httponly=True,
         secure=True,        # required when samesite='None'
-        samesite='none',    # required for cross-site (Vercel → EC2)
+        samesite='None',    # required for cross-site (Vercel → EC2)
     )
 
     response.set_cookie(
@@ -41,12 +41,12 @@ def set_auth_cookies(response, tokens: dict):
         max_age=REFRESH_TOKEN_MAX_AGE,
         httponly=True,
         secure=True,
-        samesite='none',
+        samesite='None',
     )
 
 def clear_auth_cookies(response):
-    response.delete_cookie(ACCESS_TOKEN_COOKIE, samesite='none')
-    response.delete_cookie(REFRESH_TOKEN_COOKIE, samesite='none')
+    response.delete_cookie(ACCESS_TOKEN_COOKIE, samesite='None')
+    response.delete_cookie(REFRESH_TOKEN_COOKIE, samesite='None')
 
 
 
@@ -363,7 +363,7 @@ class TokenRefreshView(APIView):
             max_age=ACCESS_TOKEN_MAX_AGE,
             httponly=True,
             secure=is_production,
-            samesite='none',
+            samesite='None',
         )
         return response
     
