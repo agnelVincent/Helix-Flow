@@ -363,7 +363,7 @@ class TokenRefreshView(APIView):
             max_age=ACCESS_TOKEN_MAX_AGE,
             httponly=True,
             secure=is_production,
-            samesite='Lax',
+            samesite='None',
         )
         return response
     
