@@ -36,9 +36,9 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # CsrfViewMiddleware removed — this is a stateless JWT API.
-    # CSRF protection is not needed here; cookies are HttpOnly+Secure+SameSite=None.
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # CsrfViewMiddleware removed — stateless JWT API, not session/form-based.
+    # AuthenticationMiddleware removed — requires SessionMiddleware (not used here).
+    # Auth is handled entirely by DRF's CookieJWTAuthentication.
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
