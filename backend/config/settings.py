@@ -99,6 +99,9 @@ CSRF_COOKIE_SECURE = True
 LANGUAGE_COOKIE_SAMESITE = 'None'
 LANGUAGE_COOKIE_SECURE = True
 
+JWT_AUTH_COOKIE_SAMESITE = 'None'
+SECURE_COOKIE_SAMESITE = 'None'
+
 CSRF_TRUSTED_ORIGINS = [
     'https://helix-flow-3i1a.vercel.app',
     'https://helix-flow.duckdns.org',
