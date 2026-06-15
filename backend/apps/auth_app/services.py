@@ -18,11 +18,6 @@ def get_otp_expiry() -> datetime:
     return datetime.now(timezone.utc) + timedelta(minutes=OTP_EXPIRY_MINUTES)
 
 
-def get_otp_expiry() -> datetime:
-
-    return datetime.now(timezone.utc) + timedelta(minutes=OTP_EXPIRY_MINUTES)
-
-
 def send_otp_email(email: str, otp: str) -> None:
 
     subject = EMAIL_SUBJECT_OTP

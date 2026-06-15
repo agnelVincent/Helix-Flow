@@ -36,5 +36,5 @@ class User(Document):
         self.updated_at = datetime.now(timezone.utc)
         self.save()
 
-        def __str__(self):
-            return self.email
+    def __str__(self):
+        return self.email

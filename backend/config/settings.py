@@ -32,11 +32,12 @@ INSTALLED_APPS = [
 
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',          
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',      
+    # CsrfViewMiddleware removed — this is a stateless JWT API.
+    # CSRF protection is not needed here; cookies are HttpOnly+Secure+SameSite=None.
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
